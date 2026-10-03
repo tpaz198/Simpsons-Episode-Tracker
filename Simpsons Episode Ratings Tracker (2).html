@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Simpsons Episode Ratings Tracker (Seasons 1–12)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Luckiest Guy for cartoon branding -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Luckiest+Guy&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            simpson: {
+              yellow: '#FED90F',
+              yellowDark: '#E5C000',
+              blue: '#70D6FF',
+              blueSky: '#3A86FF',
+              donut: '#FF69B4',
+              donutDark: '#E84A86',
+              bgLight: '#FFFBE6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            simpson: ['"Luckiest Guy"', 'cursive']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FEE765;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D9A800;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #B38600;
+    }
+
+    /* Range slider custom styling for integer steps */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 26px;
+      width: 26px;
+      border-radius: 50%;
+      background: #FED90F;
+      border: 3px solid #111827;
+      cursor: pointer;
+      margin-top: -9px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: transform 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 9px;
+      cursor: pointer;
+      border-radius: 9999px;
+      background: #E5E7EB;
+      border: 1.5px solid #111827;
+    }
+
+    /* Diagonal split triangle pattern for dual rating display */
+    .diagonal-cell {
+      position: relative;
+      overflow: hidden;
+    }
+    .diagonal-cell .top-left {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+    }
+    .diagonal-cell .bottom-right {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+
+    /* Springfield cloud background banner */
+    .springfield-clouds {
+      background: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.7) 0%, transparent 20%),
+                  radial-gradient(circle at 35% 60%, rgba(255,255,255,0.8) 0%, transparent 25%),
+                  radial-gradient(circle at 75% 25%, rgba(255,255,255,0.75) 0%, transparent 22%),
+                  radial-gradient(circle at 90% 70%, rgba(255,255,255,0.85) 0%, transparent 28%);
+    }
+  </style>
+</head>
+
+<body class="bg-[#FDE74C] text-gray-900 min-h-screen font-sans selection:bg-pink-300 selection:text-gray-900 pb-16">
+
+  <!-- Header Banner -->
+  <header class="bg-[#FED90F] border-b-4 border-black shadow-md relative overflow-hidden">
+    <div class="absolute inset-0 bg-blue-300/30 springfield-clouds pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-pink-400 border-2 border-black flex items-center justify-center shadow-md text-2xl flex-shrink-0 animate-bounce">
+          🍩
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-3xl sm:text-4xl font-simpson tracking-wider text-black drop-shadow-[2px_2px_0px_#ffffff]">
+              THE SIMPSONS
+            </h1>
+            <span class="bg-black text-[#FED90F] text-xs font-black uppercase px-2.5 py-0.5 rounded tracking-wider">
+              Ratings Tracker
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm font-semibold text-gray-800 tracking-tight">
+            Golden Age (Seasons 1–12) • Quality & Hilarity Scorecard
+          </p>
+        </div>
+      </div>
+
+      <!-- Live User Stats Badges -->
+      <div class="flex flex-wrap items-center justify-center gap-2 text-xs">
+        <div class="bg-white border-2 border-black rounded-xl px-3.5 py-1.5 shadow-sm text-center">
+          <span class="block text-[10px] uppercase font-bold text-gray-500">Rated</span>
+          <span id="stat-rated-count" class="font-extrabold text-sm text-gray-900">0 / 269</span>
+        </div>
+        <div class="bg-white border-2 border-black rounded-xl px-3.5 py-1.5 shadow-sm text-center">
+          <span class="block text-[10px] uppercase font-bold text-gray-500">My Avg Quality</span>
+          <span id="stat-avg-quality" class="font-extrabold text-sm text-emerald-700">-</span>
+        </div>
+        <div class="bg-white border-2 border-black rounded-xl px-3.5 py-1.5 shadow-sm text-center">
+          <span class="block text-[10px] uppercase font-bold text-gray-500">My Avg Hilarity</span>
+          <span id="stat-avg-hilarity" class="font-extrabold text-sm text-blue-700">-</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-5">
+    
+    <!-- Tab Controls Bar -->
+    <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-6">
+      <div class="flex gap-2">
+        <button id="tab-btn-entry" onclick="switchTab('entry')" 
+          class="flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-bold text-sm sm:text-base border-2 border-b-0 border-black transition-all bg-white text-black shadow-md -mb-[2px] relative z-10">
+          <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          1. Data Entry
+        </button>
+
+        <button id="tab-btn-chart" onclick="switchTab('chart')" 
+          class="flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-bold text-sm sm:text-base border-2 border-b-0 border-black/40 transition-all bg-amber-200/70 hover:bg-white/70 text-gray-700 -mb-[2px]">
+          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          2. Ratings Chart
+        </button>
+      </div>
+
+      <!-- Quick Export / Import tools -->
+      <div class="hidden sm:flex items-center gap-2">
+        <button onclick="exportCSV()" title="Download your personal ratings as CSV" class="px-3 py-1.5 text-xs font-black bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg border-2 border-black shadow-sm transition-all flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: DATA ENTRY -->
+    <section id="view-entry" class="block">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Main Form Card -->
+        <div class="lg:col-span-8 bg-white border-3 border-black rounded-2xl shadow-[5px_5px_0px_#000000] p-6 sm:p-8">
+          
+          <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <div>
+              <h2 class="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                Rate Episode
+              </h2>
+              <p class="text-xs text-gray-500 font-medium">Assign whole integer scores (1 to 10) for Quality and Hilarity.</p>
+            </div>
+            
+            <!-- Rated/Unrated Badge Indicator -->
+            <div id="current-rating-badge" class="px-3 py-1 rounded-full text-xs font-black border border-gray-300 bg-gray-100 text-gray-600 transition-colors">
+              Unrated
+            </div>
+          </div>
+
+          <!-- INPUTS 1 & 2: Season & Episode Dropdowns -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-6">
+            
+            <!-- 1. Season Dropdown -->
+            <div class="sm:col-span-4">
+              <label for="select-season" class="block text-xs font-extrabold uppercase text-gray-700 tracking-wider mb-1.5">
+                1. Season (1–12)
+              </label>
+              <div class="relative">
+                <select id="select-season" onchange="onSeasonChange()" 
+                  class="w-full appearance-none bg-yellow-50 border-2 border-black rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-black cursor-pointer shadow-sm text-sm">
+                  <!-- Seasons 1 to 12 generated via JS -->
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-black">
+                  ▼
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Episode Dropdown -->
+            <div class="sm:col-span-8">
+              <label for="select-episode" class="block text-xs font-extrabold uppercase text-gray-700 tracking-wider mb-1.5 flex justify-between">
+                <span>2. Episode Number & Title</span>
+                <span id="season-ep-count-hint" class="text-gray-500 font-medium lowercase"></span>
+              </label>
+              <div class="relative">
+                <select id="select-episode" onchange="onEpisodeChange()" 
+                  class="w-full appearance-none bg-yellow-50 border-2 border-black rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-black cursor-pointer shadow-sm text-sm truncate">
+                  <!-- Episodes generated dynamically -->
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-black">
+                  ▼
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Episode Info & Prev/Next Quick Navigation -->
+          <div class="bg-amber-50/90 border-2 border-dashed border-amber-300 rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <span id="preview-tag" class="inline-block bg-yellow-400 text-black text-[11px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider mb-1">
+                Season 1 • Episode 1
+              </span>
+              <h3 id="preview-title" class="text-lg font-extrabold text-gray-900">
+                Simpsons Roasting on an Open Fire
+              </h3>
+            </div>
+            
+            <!-- Quick Prev/Next buttons -->
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <button onclick="navEpisode(-1)" title="Previous Episode" class="px-3 py-2 rounded-xl border-2 border-black bg-white hover:bg-yellow-200 text-gray-900 font-bold transition-transform active:scale-95 shadow-sm text-xs flex items-center gap-1">
+                ◀ Prev
+              </button>
+              <button onclick="navEpisode(1)" title="Next Episode" class="px-3 py-2 rounded-xl border-2 border-black bg-white hover:bg-yellow-200 text-gray-900 font-bold transition-transform active:scale-95 shadow-sm text-xs flex items-center gap-1">
+                Next ▶
+              </button>
+            </div>
+          </div>
+
+          <!-- INPUTS 3 & 4: Integer Sliders (1 to 10) -->
+          <div class="space-y-7">
+            
+            <!-- 3. Episode Quality Slider -->
+            <div class="bg-gray-50 border-2 border-black rounded-xl p-5 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-full bg-emerald-600 inline-block"></span>
+                  <label for="slider-quality" class="text-base font-extrabold text-gray-900">
+                    3. Episode Quality (1–10)
+                  </label>
+                </div>
+                
+                <div id="badge-quality-val" class="w-12 h-10 rounded-lg flex items-center justify-center font-black text-xl border-2 border-black shadow-inner bg-emerald-500 text-white transition-colors">
+                  7
+                </div>
+              </div>
+
+              <!-- Strict Integer Step Range -->
+              <input type="range" id="slider-quality" min="1" max="10" step="1" value="7"
+                oninput="onQualitySliderInput(this.value)" class="w-full">
+              
+              <!-- Integer Ticks Guide -->
+              <div class="flex justify-between text-[11px] font-black text-gray-500 mt-2 px-1">
+                <span class="text-red-600">1</span>
+                <span class="text-red-500">2</span>
+                <span class="text-orange-500">3</span>
+                <span class="text-orange-400">4</span>
+                <span class="text-amber-500">5</span>
+                <span class="text-yellow-600">6</span>
+                <span class="text-emerald-500">7</span>
+                <span class="text-emerald-600">8</span>
+                <span class="text-emerald-700">9</span>
+                <span class="text-emerald-800">10</span>
+              </div>
+            </div>
+
+            <!-- 4. Episode Hilarity Slider -->
+            <div class="bg-gray-50 border-2 border-black rounded-xl p-5 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-full bg-blue-600 inline-block"></span>
+                  <label for="slider-hilarity" class="text-base font-extrabold text-gray-900">
+                    4. Episode Hilarity (1–10)
+                  </label>
+                </div>
+                
+                <div id="badge-hilarity-val" class="w-12 h-10 rounded-lg flex items-center justify-center font-black text-xl border-2 border-black shadow-inner bg-blue-500 text-white transition-colors">
+                  7
+                </div>
+              </div>
+
+              <!-- Strict Integer Step Range -->
+              <input type="range" id="slider-hilarity" min="1" max="10" step="1" value="7"
+                oninput="onHilaritySliderInput(this.value)" class="w-full">
+              
+              <!-- Integer Ticks Guide -->
+              <div class="flex justify-between text-[11px] font-black text-gray-500 mt-2 px-1">
+                <span class="text-red-600">1</span>
+                <span class="text-red-500">2</span>
+                <span class="text-orange-500">3</span>
+                <span class="text-orange-400">4</span>
+                <span class="text-amber-500">5</span>
+                <span class="text-yellow-600">6</span>
+                <span class="text-emerald-500">7</span>
+                <span class="text-emerald-600">8</span>
+                <span class="text-emerald-700">9</span>
+                <span class="text-emerald-800">10</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons Bar -->
+          <div class="mt-8 pt-6 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <button onclick="saveCurrentRating()" 
+                class="px-6 py-3 bg-[#FED90F] hover:bg-[#F0C900] active:scale-95 text-black font-extrabold text-base rounded-xl border-2 border-black shadow-[3px_3px_0px_#000] transition-all flex items-center gap-2">
+                <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Save Rating
+              </button>
+
+              <button onclick="viewInChart()" 
+                class="px-4 py-3 bg-white hover:bg-yellow-50 text-gray-800 font-bold text-sm rounded-xl border-2 border-black shadow-sm transition-all flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                View on Chart
+              </button>
+            </div>
+
+            <button id="btn-delete-rating" onclick="clearCurrentRating()" 
+              class="px-3.5 py-2.5 text-xs font-bold text-red-600 hover:text-white hover:bg-red-600 rounded-xl border border-red-300 transition-colors flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              Clear / Delete Rating
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar: Season Progress Tracker -->
+        <div class="lg:col-span-4 space-y-5">
+          <!-- Current Season Progress Tracker -->
+          <div class="bg-white border-3 border-black rounded-2xl p-6 shadow-[5px_5px_0px_#000]">
+            <h4 class="text-xs font-black uppercase text-gray-800 tracking-wider mb-3 flex items-center justify-between">
+              <span>Selected Season Progress</span>
+              <span id="season-progress-label" class="text-amber-900 font-bold">0 / 13 rated</span>
+            </h4>
+            <div class="w-full bg-gray-100 border border-black rounded-full h-3.5 overflow-hidden mb-3">
+              <div id="season-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p class="text-xs text-gray-600 leading-snug">
+              Every score is saved directly to your browser. You can export or backup your scores as a CSV anytime from the top bar.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: RATINGS CHART -->
+    <section id="view-chart" class="hidden">
+      
+      <!-- Chart Controls Header -->
+      <div class="bg-white border-3 border-black rounded-2xl shadow-[5px_5px_0px_#000] p-4 sm:p-6 mb-6">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          
+          <div>
+            <h2 class="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <span>📊</span> Episode Ratings Matrix
+            </h2>
+            <p class="text-xs text-gray-500 font-medium">
+              Season on top X-axis, Episode number on left Y-axis. Click any cell to jump to Data Entry.
+            </p>
+          </div>
+
+          <!-- View Mode & CSV Action Buttons -->
+          <div class="flex flex-wrap items-center gap-3">
+            
+            <!-- Cell Mode Control -->
+            <div class="flex items-center bg-gray-100 p-1 rounded-xl border border-black">
+              <button onclick="setChartDisplayMode('split')" id="mode-btn-split"
+                class="px-3 py-1.5 rounded-lg text-xs font-black bg-white text-gray-900 shadow-sm border border-gray-300 transition-all">
+                Dual Split (Q & H)
+              </button>
+              <button onclick="setChartDisplayMode('diagonal')" id="mode-btn-diagonal"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 hover:text-gray-900 transition-all">
+                Diagonal
+              </button>
+              <button onclick="setChartDisplayMode('quality')" id="mode-btn-quality"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 hover:text-gray-900 transition-all">
+                Quality Only
+              </button>
+              <button onclick="setChartDisplayMode('hilarity')" id="mode-btn-hilarity"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 hover:text-gray-900 transition-all">
+                Hilarity Only
+              </button>
+            </div>
+
+            <!-- CSV & Reset Tools -->
+            <div class="flex items-center gap-2">
+              <button onclick="exportCSV()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg border border-black font-bold text-xs shadow-sm flex items-center gap-1">
+                📥 Export CSV
+              </button>
+              <label class="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-800 rounded-lg border border-black font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1">
+                📤 Import CSV
+                <input type="file" id="csv-file-input" accept=".csv" onchange="importCSV(event)" class="hidden">
+              </label>
+              <button onclick="promptClearAllRatings()" class="px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg border border-red-300 font-bold text-xs">
+                Reset
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- The Yellow Grid Canvas -->
+      <div class="bg-[#FED90F] border-3 border-black rounded-2xl shadow-[6px_6px_0px_#000] p-4 sm:p-6 overflow-x-auto relative">
+        
+        <!-- Header Caption -->
+        <div class="text-center mb-5">
+          <h3 class="text-lg sm:text-xl font-simpson tracking-wide text-black drop-shadow-[1px_1px_0px_#fff]">
+            Your Average Rating per Season
+          </h3>
+          <p class="text-[11px] font-bold text-gray-800">
+            Averages are calculated exclusively from your rated episodes. Unrated seasons show "-"
+          </p>
+        </div>
+
+        <!-- Scrollable Chart Container -->
+        <div class="min-w-[900px]">
+          
+          <!-- Top Row 1: Season Average Circles (Calculated Strictly From User Ratings) -->
+          <div class="flex items-end mb-3">
+            <div class="w-16 flex-shrink-0 text-center text-[10px] font-black uppercase text-gray-700">
+              Avg:
+            </div>
+            <div class="grid grid-cols-12 flex-1 gap-1 text-center" id="season-avg-circles-row">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Top Row 2: Season Axis Header (Season 1 to 12) -->
+          <div class="flex items-center mb-1">
+            <div class="w-16 flex-shrink-0 text-center font-black text-xs text-gray-900 uppercase tracking-wider">
+              Ep \ S
+            </div>
+            <div class="grid grid-cols-12 flex-1 gap-1 text-center font-black text-sm text-gray-900">
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">1</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">2</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">3</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">4</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">5</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">6</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">7</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">8</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">9</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">10</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">11</div>
+              <div class="py-1 bg-yellow-200/80 border border-black/40 rounded">12</div>
+            </div>
+          </div>
+
+          <!-- Main Grid Rows (Episode 1 through Episode 25) -->
+          <div id="grid-episodes-body" class="space-y-1">
+            <!-- 25 rows generated by JS -->
+          </div>
+
+        </div>
+
+        <!-- Note at bottom of chart -->
+        <div class="mt-6 pt-4 border-t-2 border-black/20 flex items-center justify-between">
+          <div class="text-xs font-bold text-gray-800">
+            Click any cell to immediately rate or update that episode in Data Entry.
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Rich Floating Tooltip for Grid Hover (No IMDb score) -->
+  <div id="chart-tooltip" class="fixed pointer-events-none z-50 hidden bg-black/95 text-white text-xs rounded-xl p-3 shadow-2xl border-2 border-yellow-400 max-w-xs transition-opacity duration-150 backdrop-blur-sm">
+    <div class="font-black text-yellow-300 text-sm mb-0.5" id="tt-title">Episode Title</div>
+    <div class="text-gray-300 text-[11px] font-bold mb-2" id="tt-code">Season 1 • Episode 1</div>
+    <div class="grid grid-cols-2 gap-2 text-center pt-2 border-t border-gray-700">
+      <div class="bg-gray-900/80 p-1.5 rounded-lg border border-gray-800">
+        <span class="block text-[9px] uppercase tracking-wider text-gray-400 font-bold">Quality</span>
+        <span class="text-sm font-black text-emerald-400" id="tt-quality">-</span>
+      </div>
+      <div class="bg-gray-900/80 p-1.5 rounded-lg border border-gray-800">
+        <span class="block text-[9px] uppercase tracking-wider text-gray-400 font-bold">Hilarity</span>
+        <span class="text-sm font-black text-blue-400" id="tt-hilarity">-</span>
+      </div>
+    </div>
+    <div class="text-[10px] text-gray-400 mt-2 text-center">
+      Click to open in Data Entry
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none bg-black text-white px-5 py-3 rounded-xl border-2 border-yellow-400 shadow-2xl flex items-center gap-3 text-sm font-bold">
+    <span id="toast-icon">🍩</span>
+    <span id="toast-msg">Rating Saved!</span>
+  </div>
+
+  <!-- Custom Confirmation Modal (No alert or confirm) -->
+  <div id="custom-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white border-3 border-black rounded-2xl max-w-sm w-full p-6 shadow-[6px_6px_0px_#000] text-center">
+      <div class="text-3xl mb-2" id="modal-icon">⚠️</div>
+      <h3 class="text-lg font-black text-gray-900 mb-2" id="modal-title">Confirm Action</h3>
+      <p class="text-xs text-gray-600 mb-6 font-medium" id="modal-desc">Are you sure you want to proceed?</p>
+      <div class="flex items-center justify-center gap-3">
+        <button id="modal-btn-cancel" class="px-4 py-2 border-2 border-black rounded-xl font-bold text-xs hover:bg-gray-100">
+          Cancel
+        </button>
+        <button id="modal-btn-confirm" class="px-4 py-2 bg-red-600 text-white border-2 border-black rounded-xl font-bold text-xs hover:bg-red-700 shadow-sm">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Complete Canonical Simpsons Dataset: Seasons 1 through 12 (Strictly 269 episodes, NO IMDb reference ratings) */
+    const SIMPSONS_DATA = [
+      // Season 1 (13 episodes)
+      { s: 1, e: 1, title: "Simpsons Roasting on an Open Fire" },
+      { s: 1, e: 2, title: "Bart the Genius" },
+      { s: 1, e: 3, title: "Homer's Odyssey" },
+      { s: 1, e: 4, title: "There's No Disgrace Like Home" },
+      { s: 1, e: 5, title: "Bart the General" },
+      { s: 1, e: 6, title: "Moaning Lisa" },
+      { s: 1, e: 7, title: "The Call of the Simpsons" },
+      { s: 1, e: 8, title: "The Telltale Head" },
+      { s: 1, e: 9, title: "Life on the Fast Lane" },
+      { s: 1, e: 10, title: "Homer's Night Out" },
+      { s: 1, e: 11, title: "The Crepes of Wrath" },
+      { s: 1, e: 12, title: "Krusty Gets Busted" },
+      { s: 1, e: 13, title: "Some Enchanted Evening" },
+
+      // Season 2 (22 episodes)
+      { s: 2, e: 1, title: "Bart Gets an \"F\"" },
+      { s: 2, e: 2, title: "Simpson and Delilah" },
+      { s: 2, e: 3, title: "Treehouse of Horror" },
+      { s: 2, e: 4, title: "Two Cars in Every Garage and Three Eyes on Every Fish" },
+      { s: 2, e: 5, title: "Dancin' Homer" },
+      { s: 2, e: 6, title: "Dead Putting Society" },
+      { s: 2, e: 7, title: "Bart vs. Thanksgiving" },
+      { s: 2, e: 8, title: "Bart the Daredevil" },
+      { s: 2, e: 9, title: "Itchy & Scratchy & Marge" },
+      { s: 2, e: 10, title: "Bart Gets Hit by a Car" },
+      { s: 2, e: 11, title: "One Fish, Two Fish, Blowfish, Blue Fish" },
+      { s: 2, e: 12, title: "The Way We Was" },
+      { s: 2, e: 13, title: "Homer vs. Lisa and the 8th Commandment" },
+      { s: 2, e: 14, title: "Principal Charming" },
+      { s: 2, e: 15, title: "Oh Brother, Where Art Thou?" },
+      { s: 2, e: 16, title: "Bart's Dog Gets an \"F\"" },
+      { s: 2, e: 17, title: "Old Money" },
+      { s: 2, e: 18, title: "Brush with Greatness" },
+      { s: 2, e: 19, title: "Lisa's Substitute" },
+      { s: 2, e: 20, title: "The War of the Simpsons" },
+      { s: 2, e: 21, title: "Three Men and a Comic Book" },
+      { s: 2, e: 22, title: "Blood Feud" },
+
+      // Season 3 (24 episodes)
+      { s: 3, e: 1, title: "Stark Raving Dad" },
+      { s: 3, e: 2, title: "Mr. Lisa Goes to Washington" },
+      { s: 3, e: 3, title: "When Flanders Failed" },
+      { s: 3, e: 4, title: "Bart the Murderer" },
+      { s: 3, e: 5, title: "Homer Defined" },
+      { s: 3, e: 6, title: "Like Father, Like Clown" },
+      { s: 3, e: 7, title: "Treehouse of Horror II" },
+      { s: 3, e: 8, title: "Lisa's Pony" },
+      { s: 3, e: 9, title: "Saturdays of Thunder" },
+      { s: 3, e: 10, title: "Flaming Moe's" },
+      { s: 3, e: 11, title: "Burns Verkaufen der Kraftwerk" },
+      { s: 3, e: 12, title: "I Married Marge" },
+      { s: 3, e: 13, title: "Radio Bart" },
+      { s: 3, e: 14, title: "Lisa the Greek" },
+      { s: 3, e: 15, title: "Homer Alone" },
+      { s: 3, e: 16, title: "Bart the Lover" },
+      { s: 3, e: 17, title: "Homer at the Bat" },
+      { s: 3, e: 18, title: "Separate Vocations" },
+      { s: 3, e: 19, title: "Dog of Death" },
+      { s: 3, e: 20, title: "Colonel Homer" },
+      { s: 3, e: 21, title: "Black Widower" },
+      { s: 3, e: 22, title: "The Otto Show" },
+      { s: 3, e: 23, title: "Bart's Friend Falls in Love" },
+      { s: 3, e: 24, title: "Brother, Can You Spare Two Dimes?" },
+
+      // Season 4 (22 episodes)
+      { s: 4, e: 1, title: "Kamp Krusty" },
+      { s: 4, e: 2, title: "A Streetcar Named Marge" },
+      { s: 4, e: 3, title: "Homer the Heretic" },
+      { s: 4, e: 4, title: "Lisa the Beauty Queen" },
+      { s: 4, e: 5, title: "Treehouse of Horror III" },
+      { s: 4, e: 6, title: "Itchy & Scratchy: The Movie" },
+      { s: 4, e: 7, title: "Marge Gets a Job" },
+      { s: 4, e: 8, title: "New Kid on the Block" },
+      { s: 4, e: 9, title: "Mr. Plow" },
+      { s: 4, e: 10, title: "Lisa's First Word" },
+      { s: 4, e: 11, title: "Homer's Triple Bypass" },
+      { s: 4, e: 12, title: "Marge vs. the Monorail" },
+      { s: 4, e: 13, title: "Selma's Choice" },
+      { s: 4, e: 14, title: "Brother from the Same Planet" },
+      { s: 4, e: 15, title: "I Love Lisa" },
+      { s: 4, e: 16, title: "Duffless" },
+      { s: 4, e: 17, title: "Last Exit to Springfield" },
+      { s: 4, e: 18, title: "So It's Come to This: A Simpsons Clip Show" },
+      { s: 4, e: 19, title: "The Front" },
+      { s: 4, e: 20, title: "Whacking Day" },
+      { s: 4, e: 21, title: "Marge in Chains" },
+      { s: 4, e: 22, title: "Krusty Gets Kancelled" },
+
+      // Season 5 (22 episodes)
+      { s: 5, e: 1, title: "Homer's Barbershop Quartet" },
+      { s: 5, e: 2, title: "Cape Feare" },
+      { s: 5, e: 3, title: "Homer Goes to College" },
+      { s: 5, e: 4, title: "Rosebud" },
+      { s: 5, e: 5, title: "Treehouse of Horror IV" },
+      { s: 5, e: 6, title: "Marge on the Lam" },
+      { s: 5, e: 7, title: "Bart's Inner Child" },
+      { s: 5, e: 8, title: "Boy-Scoutz 'n the Hood" },
+      { s: 5, e: 9, title: "The Last Temptation of Homer" },
+      { s: 5, e: 10, title: "$pringfield (Or, How I Learned to Stop Worrying and Love Legalized Gambling)" },
+      { s: 5, e: 11, title: "Homer the Vigilante" },
+      { s: 5, e: 12, title: "Bart Gets Famous" },
+      { s: 5, e: 13, title: "Homer and Apu" },
+      { s: 5, e: 14, title: "Lisa vs. Malibu Stacy" },
+      { s: 5, e: 15, title: "Deep Space Homer" },
+      { s: 5, e: 16, title: "Homer Loves Flanders" },
+      { s: 5, e: 17, title: "Bart Gets an Elephant" },
+      { s: 5, e: 18, title: "Burns' Heir" },
+      { s: 5, e: 19, title: "Sweet Seymour Skinner's Baadasssss Song" },
+      { s: 5, e: 20, title: "The Boy Who Knew Too Much" },
+      { s: 5, e: 21, title: "Lady Bouvier's Lover" },
+      { s: 5, e: 22, title: "Secrets of a Successful Marriage" },
+
+      // Season 6 (25 episodes)
+      { s: 6, e: 1, title: "Bart of Darkness" },
+      { s: 6, e: 2, title: "Lisa's Rival" },
+      { s: 6, e: 3, title: "Another Simpsons Clip Show" },
+      { s: 6, e: 4, title: "Itchy & Scratchy Land" },
+      { s: 6, e: 5, title: "Sideshow Bob Roberts" },
+      { s: 6, e: 6, title: "Treehouse of Horror V" },
+      { s: 6, e: 7, title: "Bart's Girlfriend" },
+      { s: 6, e: 8, title: "Lisa on Ice" },
+      { s: 6, e: 9, title: "Homer Badman" },
+      { s: 6, e: 10, title: "Grampa vs. Sexual Inadequacy" },
+      { s: 6, e: 11, title: "Fear of Flying" },
+      { s: 6, e: 12, title: "Homer the Great" },
+      { s: 6, e: 13, title: "And Maggie Makes Three" },
+      { s: 6, e: 14, title: "Bart's Comet" },
+      { s: 6, e: 15, title: "Homie the Clown" },
+      { s: 6, e: 16, title: "Bart vs. Australia" },
+      { s: 6, e: 17, title: "Homer vs. Patty and Selma" },
+      { s: 6, e: 18, title: "A Star Is Burns" },
+      { s: 6, e: 19, title: "Lisa's Wedding" },
+      { s: 6, e: 20, title: "Two Dozen and One Greyhounds" },
+      { s: 6, e: 21, title: "The PTA Disbands" },
+      { s: 6, e: 22, title: "'Round Springfield" },
+      { s: 6, e: 23, title: "The Springfield Connection" },
+      { s: 6, e: 24, title: "Lemon of Troy" },
+      { s: 6, e: 25, title: "Who Shot Mr. Burns? (Part One)" },
+
+      // Season 7 (25 episodes)
+      { s: 7, e: 1, title: "Who Shot Mr. Burns? (Part Two)" },
+      { s: 7, e: 2, title: "Radioactive Man" },
+      { s: 7, e: 3, title: "Home Sweet Homediddly-Dum-Doodily" },
+      { s: 7, e: 4, title: "Bart Sells His Soul" },
+      { s: 7, e: 5, title: "Lisa the Vegetarian" },
+      { s: 7, e: 6, title: "Treehouse of Horror VI" },
+      { s: 7, e: 7, title: "King-Size Homer" },
+      { s: 7, e: 8, title: "Mother Simpson" },
+      { s: 7, e: 9, title: "Sideshow Bob's Last Gleaming" },
+      { s: 7, e: 10, title: "The Simpsons 138th Episode Spectacular" },
+      { s: 7, e: 11, title: "Marge Be Not Proud" },
+      { s: 7, e: 12, title: "Team Homer" },
+      { s: 7, e: 13, title: "Two Bad Neighbors" },
+      { s: 7, e: 14, title: "Scenes from the Class Struggle in Springfield" },
+      { s: 7, e: 15, title: "Bart the Fink" },
+      { s: 7, e: 16, title: "Lisa the Iconoclast" },
+      { s: 7, e: 17, title: "Homer the Smithers" },
+      { s: 7, e: 18, title: "The Day the Violence Died" },
+      { s: 7, e: 19, title: "A Fish Called Selma" },
+      { s: 7, e: 20, title: "Bart on the Road" },
+      { s: 7, e: 21, title: "22 Short Films About Springfield" },
+      { s: 7, e: 22, title: "Raging Abe Simpson and His Grumbling Grandson in \"The Curse of the Flying Hellfish\"" },
+      { s: 7, e: 23, title: "Much Apu About Nothing" },
+      { s: 7, e: 24, title: "Homerpalooza" },
+      { s: 7, e: 25, title: "Summer of 4 Ft. 2" },
+
+      // Season 8 (25 episodes)
+      { s: 8, e: 1, title: "Treehouse of Horror VII" },
+      { s: 8, e: 2, title: "You Only Move Twice" },
+      { s: 8, e: 3, title: "The Homer They Fall" },
+      { s: 8, e: 4, title: "Burns, Baby Burns" },
+      { s: 8, e: 5, title: "Bart After Dark" },
+      { s: 8, e: 6, title: "A Milhouse Divided" },
+      { s: 8, e: 7, title: "Lisa's Date with Density" },
+      { s: 8, e: 8, title: "Hurricane Neddy" },
+      { s: 8, e: 9, title: "El Viaje Misterioso de Nuestro Jomer (The Mysterious Voyage of Homer)" },
+      { s: 8, e: 10, title: "The Springfield Files" },
+      { s: 8, e: 11, title: "The Twisted World of Marge Simpson" },
+      { s: 8, e: 12, title: "Mountain of Madness" },
+      { s: 8, e: 13, title: "Simpsoncalifragilisticexpiala(Annoyed Grunt)cious" },
+      { s: 8, e: 14, title: "The Itchy & Scratchy & Poochie Show" },
+      { s: 8, e: 15, title: "Homer's Phobia" },
+      { s: 8, e: 16, title: "Brother from Another Series" },
+      { s: 8, e: 17, title: "My Sister, My Sitter" },
+      { s: 8, e: 18, title: "Homer vs. the Eighteenth Amendment" },
+      { s: 8, e: 19, title: "Grade School Confidential" },
+      { s: 8, e: 20, title: "The Canine Mutiny" },
+      { s: 8, e: 21, title: "The Old Man and the Lisa" },
+      { s: 8, e: 22, title: "In Marge We Trust" },
+      { s: 8, e: 23, title: "Homer's Enemy" },
+      { s: 8, e: 24, title: "The Simpsons Spin-Off Showcase" },
+      { s: 8, e: 25, title: "The Secret War of Lisa Simpson" },
+
+      // Season 9 (25 episodes)
+      { s: 9, e: 1, title: "The City of New York vs. Homer Simpson" },
+      { s: 9, e: 2, title: "The Principal and the Pauper" },
+      { s: 9, e: 3, title: "Lisa's Sax" },
+      { s: 9, e: 4, title: "Treehouse of Horror VIII" },
+      { s: 9, e: 5, title: "The Cartridge Family" },
+      { s: 9, e: 6, title: "Bart Star" },
+      { s: 9, e: 7, title: "The Two Mrs. Nahasapeemapetilons" },
+      { s: 9, e: 8, title: "Lisa the Skeptic" },
+      { s: 9, e: 9, title: "Realty Bites" },
+      { s: 9, e: 10, title: "Miracle on Evergreen Terrace" },
+      { s: 9, e: 11, title: "All Singing, All Dancing" },
+      { s: 9, e: 12, title: "Bart Carny" },
+      { s: 9, e: 13, title: "The Joy of Sect" },
+      { s: 9, e: 14, title: "Das Bus" },
+      { s: 9, e: 15, title: "The Last Temptation of Krust" },
+      { s: 9, e: 16, title: "Dumbbell Indemnity" },
+      { s: 9, e: 17, title: "Lisa the Simpson" },
+      { s: 9, e: 18, title: "This Little Wiggy" },
+      { s: 9, e: 19, title: "Simpson Tide" },
+      { s: 9, e: 20, title: "The Trouble with Trillions" },
+      { s: 9, e: 21, title: "Girly Edition" },
+      { s: 9, e: 22, title: "Trash of the Titans" },
+      { s: 9, e: 23, title: "King of the Hill" },
+      { s: 9, e: 24, title: "Lost Our Lisa" },
+      { s: 9, e: 25, title: "Natural Born Kissers" },
+
+      // Season 10 (23 episodes)
+      { s: 10, e: 1, title: "Lard of the Dance" },
+      { s: 10, e: 2, title: "The Wizard of Evergreen Terrace" },
+      { s: 10, e: 3, title: "Bart the Mother" },
+      { s: 10, e: 4, title: "Treehouse of Horror IX" },
+      { s: 10, e: 5, title: "When You Dish Upon a Star" },
+      { s: 10, e: 6, title: "D'oh-in in the Wind" },
+      { s: 10, e: 7, title: "Lisa Gets an \"A\"" },
+      { s: 10, e: 8, title: "Homer Simpson in: \"Kidney Trouble\"" },
+      { s: 10, e: 9, title: "Mayored to the Mob" },
+      { s: 10, e: 10, title: "Viva Ned Flanders" },
+      { s: 10, e: 11, title: "Wild Barts Can't Be Broken" },
+      { s: 10, e: 12, title: "Sunday, Cruddy Sunday" },
+      { s: 10, e: 13, title: "Homer to the Max" },
+      { s: 10, e: 14, title: "I'm with Cupid" },
+      { s: 10, e: 15, title: "Marge Simpson in: \"Screaming Yellow Honkers\"" },
+      { s: 10, e: 16, title: "Make Room for Lisa" },
+      { s: 10, e: 17, title: "Maximum Homerdrive" },
+      { s: 10, e: 18, title: "Simpsons Bible Stories" },
+      { s: 10, e: 19, title: "Mom and Pop Art" },
+      { s: 10, e: 20, title: "The Old Man and the \"C\" Student" },
+      { s: 10, e: 21, title: "Monty Can't Buy Me Love" },
+      { s: 10, e: 22, title: "They Saved Lisa's Brain" },
+      { s: 10, e: 23, title: "Thirty Minutes over Tokyo" },
+
+      // Season 11 (22 episodes)
+      { s: 11, e: 1, title: "Beyond Blunderdome" },
+      { s: 11, e: 2, title: "Brother's Little Helper" },
+      { s: 11, e: 3, title: "Guess Who's Coming to Criticize Dinner?" },
+      { s: 11, e: 4, title: "Treehouse of Horror X" },
+      { s: 11, e: 5, title: "E-I-E-I-(Annoyed Grunt)" },
+      { s: 11, e: 6, title: "Hello Gutter, Hello Fadder" },
+      { s: 11, e: 7, title: "Eight Misbehavin'" },
+      { s: 11, e: 8, title: "Take My Wife, Sleaze" },
+      { s: 11, e: 9, title: "Grift of the Magi" },
+      { s: 11, e: 10, title: "Little Big Mom" },
+      { s: 11, e: 11, title: "Faith Off" },
+      { s: 11, e: 12, title: "The Mansion Family" },
+      { s: 11, e: 13, title: "Saddlesore Galactica" },
+      { s: 11, e: 14, title: "Alone Again, Natura-Diddily" },
+      { s: 11, e: 15, title: "Missionary: Impossible" },
+      { s: 11, e: 16, title: "Pygmoelian" },
+      { s: 11, e: 17, title: "Bart to the Future" },
+      { s: 11, e: 18, title: "Days of Wine and D'oh'ses" },
+      { s: 11, e: 19, title: "Kill the Alligator and Run" },
+      { s: 11, e: 20, title: "Last Tap Dance in Springfield" },
+      { s: 11, e: 21, title: "It's a Mad, Mad, Mad, Mad Marge" },
+      { s: 11, e: 22, title: "Behind the Laughter" },
+
+      // Season 12 (21 episodes)
+      { s: 12, e: 1, title: "Treehouse of Horror XI" },
+      { s: 12, e: 2, title: "A Tale of Two Springfields" },
+      { s: 12, e: 3, title: "Insane Clown Poppy" },
+      { s: 12, e: 4, title: "Lisa the Tree Hugger" },
+      { s: 12, e: 5, title: "Homer vs. Dignity" },
+      { s: 12, e: 6, title: "The Computer Wore Menace Shoes" },
+      { s: 12, e: 7, title: "The Great Money Caper" },
+      { s: 12, e: 8, title: "Skinner's Sense of Snow" },
+      { s: 12, e: 9, title: "HOMR" },
+      { s: 12, e: 10, title: "Pokey Mom" },
+      { s: 12, e: 11, title: "Worst Episode Ever" },
+      { s: 12, e: 12, title: "Tennis the Menace" },
+      { s: 12, e: 13, title: "Day of the Jackanapes" },
+      { s: 12, e: 14, title: "New Kids on the Blecch" },
+      { s: 12, e: 15, title: "Hungry, Hungry Homer" },
+      { s: 12, e: 16, title: "Bye Bye Nerdie" },
+      { s: 12, e: 17, title: "Simpson Safari" },
+      { s: 12, e: 18, title: "Trilogy of Error" },
+      { s: 12, e: 19, title: "I'm Goin' to Praiseland" },
+      { s: 12, e: 20, title: "Children of a Lesser Clod" },
+      { s: 12, e: 21, title: "Simpsons Tall Tales" }
+    ];
+
+    const STORAGE_KEY = 'simpsons_personal_ratings_v2_integers';
+    let userRatings = {}; // Key format: "S_E" -> { quality: 8, hilarity: 9 }
+    let currentSeason = 1;
+    let currentEpisode = 1;
+    let chartDisplayMode = 'split'; // 'split', 'diagonal', 'quality', 'hilarity'
+
+    function loadRatingsFromStorage() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          userRatings = JSON.parse(stored);
+        }
+      } catch (err) {
+        console.error("Failed to load ratings:", err);
+        userRatings = {};
+      }
+    }
+
+    function saveRatingsToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userRatings));
+      } catch (err) {
+        console.error("Failed to persist ratings:", err);
+      }
+    }
+
+    // Color mapping for whole integers 1 to 10
+    function getRatingColorTokens(score) {
+      if (score === null || score === undefined || isNaN(score)) {
+        return { bg: '#f1f5f9', text: '#94a3b8', border: '#cbd5e1' };
+      }
+      const val = Math.round(Number(score));
+      if (val >= 9) {
+        return { bg: '#15803d', text: '#ffffff', border: '#166534' };
+      }
+      if (val >= 7) {
+        return { bg: '#86efac', text: '#064e3b', border: '#4ade80' };
+      }
+      if (val >= 5) {
+        return { bg: '#facc15', text: '#713f12', border: '#eab308' };
+      }
+      return { bg: '#ef4444', text: '#ffffff', border: '#dc2626' };
+    }
+
+    function getEpisodeMeta(season, ep) {
+      return SIMPSONS_DATA.find(item => item.s === season && item.e === ep);
+    }
+
+    function getSeasonEpisodes(season) {
+      return SIMPSONS_DATA.filter(item => item.s === season);
+    }
+
+    function initSeasonDropdown() {
+      const seasonSelect = document.getElementById('select-season');
+      seasonSelect.innerHTML = '';
+      for (let s = 1; s <= 12; s++) {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = `Season ${s}`;
+        seasonSelect.appendChild(opt);
+      }
+      seasonSelect.value = currentSeason;
+    }
+
+    function updateEpisodeDropdown() {
+      const epSelect = document.getElementById('select-episode');
+      const eps = getSeasonEpisodes(currentSeason);
+      epSelect.innerHTML = '';
+      
+      document.getElementById('season-ep-count-hint').textContent = `${eps.length} episodes`;
+
+      eps.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.e;
+        const key = `${item.s}_${item.e}`;
+        const isRated = Boolean(userRatings[key]);
+        opt.textContent = `Ep ${item.e}: ${item.title}${isRated ? ' ★' : ''}`;
+        epSelect.appendChild(opt);
+      });
+
+      if (currentEpisode > eps.length) {
+        currentEpisode = 1;
+      }
+      epSelect.value = currentEpisode;
+      renderCurrentEpisodeCard();
+    }
+
+    function onSeasonChange() {
+      currentSeason = parseInt(document.getElementById('select-season').value, 10);
+      currentEpisode = 1;
+      updateEpisodeDropdown();
+      updateSeasonProgressBar();
+    }
+
+    function onEpisodeChange() {
+      currentEpisode = parseInt(document.getElementById('select-episode').value, 10);
+      renderCurrentEpisodeCard();
+    }
+
+    function navEpisode(direction) {
+      const eps = getSeasonEpisodes(currentSeason);
+      let targetEp = currentEpisode + direction;
+      
+      if (targetEp > eps.length) {
+        if (currentSeason < 12) {
+          currentSeason++;
+          document.getElementById('select-season').value = currentSeason;
+          updateEpisodeDropdown();
+          targetEp = 1;
+        } else {
+          showToast('Reached the end of Season 12!');
+          return;
+        }
+      } else if (targetEp < 1) {
+        if (currentSeason > 1) {
+          currentSeason--;
+          document.getElementById('select-season').value = currentSeason;
+          updateEpisodeDropdown();
+          targetEp = getSeasonEpisodes(currentSeason).length;
+        } else {
+          showToast('Already at Season 1 Episode 1!');
+          return;
+        }
+      }
+      
+      currentEpisode = targetEp;
+      document.getElementById('select-episode').value = currentEpisode;
+      renderCurrentEpisodeCard();
+      updateSeasonProgressBar();
+    }
+
+    function renderCurrentEpisodeCard() {
+      const meta = getEpisodeMeta(currentSeason, currentEpisode);
+      if (!meta) return;
+
+      document.getElementById('preview-tag').textContent = `Season ${meta.s} • Episode ${meta.e}`;
+      document.getElementById('preview-title').textContent = meta.title;
+
+      const key = `${meta.s}_${meta.e}`;
+      const rating = userRatings[key];
+
+      const badge = document.getElementById('current-rating-badge');
+      const qSlider = document.getElementById('slider-quality');
+      const hSlider = document.getElementById('slider-hilarity');
+      const deleteBtn = document.getElementById('btn-delete-rating');
+
+      if (rating) {
+        badge.textContent = `Rated: Quality ${rating.quality} / Hilarity ${rating.hilarity}`;
+        badge.className = 'px-3 py-1 rounded-full text-xs font-black border border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm';
+        qSlider.value = rating.quality;
+        hSlider.value = rating.hilarity;
+        deleteBtn.classList.remove('hidden');
+      } else {
+        badge.textContent = 'Not Rated';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-bold border border-gray-300 bg-gray-100 text-gray-600';
+        // Default clean neutral integer (7)
+        qSlider.value = 7;
+        hSlider.value = 7;
+        deleteBtn.classList.add('hidden');
+      }
+
+      onQualitySliderInput(qSlider.value);
+      onHilaritySliderInput(hSlider.value);
+      updateSeasonProgressBar();
+    }
+
+    function onQualitySliderInput(val) {
+      const intVal = parseInt(val, 10);
+      const badge = document.getElementById('badge-quality-val');
+      badge.textContent = intVal;
+      
+      const colors = getRatingColorTokens(intVal);
+      badge.style.backgroundColor = colors.bg;
+      badge.style.color = colors.text;
+    }
+
+    function onHilaritySliderInput(val) {
+      const intVal = parseInt(val, 10);
+      const badge = document.getElementById('badge-hilarity-val');
+      badge.textContent = intVal;
+      
+      const colors = getRatingColorTokens(intVal);
+      badge.style.backgroundColor = colors.bg;
+      badge.style.color = colors.text;
+    }
+
+    function updateSeasonProgressBar() {
+      const eps = getSeasonEpisodes(currentSeason);
+      let ratedCount = 0;
+      eps.forEach(ep => {
+        if (userRatings[`${ep.s}_${ep.e}`]) ratedCount++;
+      });
+      const pct = (ratedCount / eps.length) * 100;
+      document.getElementById('season-progress-label').textContent = `${ratedCount} / ${eps.length} rated`;
+      document.getElementById('season-progress-bar').style.width = `${pct}%`;
+    }
+
+    function saveCurrentRating() {
+      const q = parseInt(document.getElementById('slider-quality').value, 10);
+      const h = parseInt(document.getElementById('slider-hilarity').value, 10);
+      const key = `${currentSeason}_${currentEpisode}`;
+
+      userRatings[key] = {
+        quality: q,
+        hilarity: h
+      };
+
+      saveRatingsToStorage();
+      updateEpisodeDropdown();
+      renderCurrentEpisodeCard();
+      updateGlobalStats();
+      buildGridTable();
+      showToast(`Saved S${currentSeason}E${currentEpisode}: Quality ${q} • Hilarity ${h}`);
+    }
+
+    function clearCurrentRating() {
+      const key = `${currentSeason}_${currentEpisode}`;
+      if (userRatings[key]) {
+        delete userRatings[key];
+        saveRatingsToStorage();
+        updateEpisodeDropdown();
+        renderCurrentEpisodeCard();
+        updateGlobalStats();
+        buildGridTable();
+        showToast(`Rating cleared for S${currentSeason}E${currentEpisode}`);
+      }
+    }
+
+    function viewInChart() {
+      switchTab('chart');
+      setTimeout(() => {
+        const cell = document.getElementById(`cell-${currentSeason}-${currentEpisode}`);
+        if (cell) {
+          cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          cell.classList.add('ring-4', 'ring-black', 'scale-110');
+          setTimeout(() => cell.classList.remove('ring-4', 'ring-black', 'scale-110'), 1500);
+        }
+      }, 150);
+    }
+
+    function buildGridTable() {
+      buildSeasonAverageBadges();
+      const tbody = document.getElementById('grid-episodes-body');
+      tbody.innerHTML = '';
+
+      // Up to 25 episodes in a season
+      for (let epNum = 1; epNum <= 25; epNum++) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center hover:bg-yellow-100/50 rounded transition-colors';
+
+        // Episode number Y-axis label
+        const epLabel = document.createElement('div');
+        epLabel.className = 'w-16 flex-shrink-0 text-center font-black text-xs text-gray-900 border-r-2 border-black/30 pr-2';
+        epLabel.textContent = epNum;
+        row.appendChild(epLabel);
+
+        // 12 Season columns
+        const colsGrid = document.createElement('div');
+        colsGrid.className = 'grid grid-cols-12 flex-1 gap-1';
+
+        for (let sNum = 1; sNum <= 12; sNum++) {
+          const epData = getEpisodeMeta(sNum, epNum);
+          const cell = document.createElement('div');
+          cell.id = `cell-${sNum}-${epNum}`;
+
+          if (!epData) {
+            // Episode does not exist in this season
+            cell.className = 'h-11 rounded border border-transparent bg-yellow-300/30 opacity-30 cursor-default';
+          } else {
+            // Episode exists
+            const ratingKey = `${sNum}_${epNum}`;
+            const rating = userRatings[ratingKey];
+            cell.className = 'h-11 rounded border border-black/70 shadow-sm cursor-pointer transition-all duration-150 transform hover:scale-105 hover:z-20 relative overflow-hidden select-none';
+            
+            renderCellContent(cell, epData, rating);
+
+            // Jump to Tab 1 on click
+            cell.onclick = () => {
+              currentSeason = sNum;
+              currentEpisode = epNum;
+              document.getElementById('select-season').value = currentSeason;
+              updateEpisodeDropdown();
+              switchTab('entry');
+            };
+
+            // Floating Tooltip
+            cell.onmouseenter = (e) => showTooltip(e, epData, rating);
+            cell.onmousemove = (e) => moveTooltip(e);
+            cell.onmouseleave = hideTooltip;
+          }
+
+          colsGrid.appendChild(cell);
+        }
+
+        row.appendChild(colsGrid);
+        tbody.appendChild(row);
+      }
+    }
+
+    function renderCellContent(cell, epData, rating) {
+      cell.innerHTML = '';
+      
+      if (!rating) {
+        // Unrated: clean light grey cell
+        cell.className += ' bg-slate-100 hover:bg-white text-gray-400 flex items-center justify-center font-bold text-xs';
+        cell.innerHTML = `<span class="opacity-40">-</span>`;
+        return;
+      }
+
+      const qVal = rating.quality;
+      const hVal = rating.hilarity;
+      const qColor = getRatingColorTokens(qVal);
+      const hColor = getRatingColorTokens(hVal);
+
+      if (chartDisplayMode === 'split') {
+        // Top half Quality, Bottom half Hilarity
+        cell.className += ' flex flex-col';
+        cell.innerHTML = `
+          <div class="h-1/2 w-full flex items-center justify-between px-1.5 text-[10px] font-black border-b border-black/30" style="background-color: ${qColor.bg}; color: ${qColor.text};">
+            <span class="opacity-80 text-[8px]">Q</span>
+            <span>${qVal}</span>
+          </div>
+          <div class="h-1/2 w-full flex items-center justify-between px-1.5 text-[10px] font-black" style="background-color: ${hColor.bg}; color: ${hColor.text};">
+            <span class="opacity-80 text-[8px]">H</span>
+            <span>${hVal}</span>
+          </div>
+        `;
+      } else if (chartDisplayMode === 'diagonal') {
+        // Diagonal Split using CSS polygon clip path
+        cell.className += ' diagonal-cell';
+        cell.innerHTML = `
+          <div class="top-left flex items-start justify-start p-1" style="background-color: ${qColor.bg}; color: ${qColor.text};">
+            <span class="text-[9px] font-black leading-none">${qVal}</span>
+          </div>
+          <div class="bottom-right flex items-end justify-end p-1" style="background-color: ${hColor.bg}; color: ${hColor.text};">
+            <span class="text-[9px] font-black leading-none">${hVal}</span>
+          </div>
+        `;
+      } else if (chartDisplayMode === 'quality') {
+        cell.style.backgroundColor = qColor.bg;
+        cell.style.color = qColor.text;
+        cell.className += ' flex items-center justify-center font-black text-xs';
+        cell.textContent = qVal;
+      } else if (chartDisplayMode === 'hilarity') {
+        cell.style.backgroundColor = hColor.bg;
+        cell.style.color = hColor.text;
+        cell.className += ' flex items-center justify-center font-black text-xs';
+        cell.textContent = hVal;
+      }
+    }
+
+    function buildSeasonAverageBadges() {
+      const container = document.getElementById('season-avg-circles-row');
+      container.innerHTML = '';
+
+      for (let s = 1; s <= 12; s++) {
+        const eps = getSeasonEpisodes(s);
+        let qSum = 0;
+        let hSum = 0;
+        let ratedCount = 0;
+
+        eps.forEach(ep => {
+          const r = userRatings[`${s}_${ep.e}`];
+          if (r) {
+            qSum += r.quality;
+            hSum += r.hilarity;
+            ratedCount++;
+          }
+        });
+
+        const badgeWrapper = document.createElement('div');
+        badgeWrapper.className = 'flex flex-col items-center justify-end';
+
+        if (ratedCount === 0) {
+          // Strictly show "-" when no episodes in this season are rated yet
+          badgeWrapper.innerHTML = `
+            <div class="w-10 h-10 rounded-full border-2 border-dashed border-gray-500 bg-white/70 flex flex-col items-center justify-center font-black text-xs text-gray-400 shadow-sm" 
+                 title="Season ${s}: No episodes rated yet">
+              <span class="text-[9px] leading-tight text-gray-500">S${s}</span>
+              <span class="text-[11px] leading-tight">-</span>
+            </div>
+          `;
+        } else {
+          // Average strictly computed from user entered ratings
+          const avgScore = (qSum + hSum) / (ratedCount * 2);
+          const colors = getRatingColorTokens(Math.round(avgScore));
+          badgeWrapper.innerHTML = `
+            <div class="w-10 h-10 rounded-full border-2 border-black flex flex-col items-center justify-center font-black shadow-md text-xs transition-transform hover:scale-110 cursor-pointer" 
+                 style="background-color: ${colors.bg}; color: ${colors.text};" 
+                 title="Season ${s} Average (${ratedCount}/${eps.length} rated)\nQuality Avg: ${(qSum/ratedCount).toFixed(1)}\nHilarity Avg: ${(hSum/ratedCount).toFixed(1)}">
+              <span class="text-[8px] leading-tight opacity-75">S${s}</span>
+              <span class="text-[10px] leading-tight font-extrabold">${avgScore.toFixed(1)}</span>
+            </div>
+          `;
+        }
+        container.appendChild(badgeWrapper);
+      }
+    }
+
+    function setChartDisplayMode(mode) {
+      chartDisplayMode = mode;
+      ['split', 'diagonal', 'quality', 'hilarity'].forEach(m => {
+        const btn = document.getElementById(`mode-btn-${m}`);
+        if (!btn) return;
+        if (m === mode) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-black bg-white text-gray-900 shadow-sm border border-gray-300 transition-all';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 hover:text-gray-900 transition-all';
+        }
+      });
+      buildGridTable();
+    }
+
+    const tooltip = document.getElementById('chart-tooltip');
+
+    function showTooltip(e, epData, rating) {
+      document.getElementById('tt-title').textContent = epData.title;
+      document.getElementById('tt-code').textContent = `Season ${epData.s} • Episode ${epData.e}`;
+      
+      const qEl = document.getElementById('tt-quality');
+      const hEl = document.getElementById('tt-hilarity');
+
+      if (rating) {
+        qEl.textContent = rating.quality;
+        hEl.textContent = rating.hilarity;
+      } else {
+        qEl.textContent = 'Unrated';
+        hEl.textContent = 'Unrated';
+      }
+
+      tooltip.classList.remove('hidden');
+      moveTooltip(e);
+    }
+
+    function moveTooltip(e) {
+      const padding = 15;
+      let x = e.clientX + padding;
+      let y = e.clientY + padding;
+
+      if (x + 200 > window.innerWidth) {
+        x = e.clientX - 210;
+      }
+      if (y + 110 > window.innerHeight) {
+        y = e.clientY - 120;
+      }
+
+      tooltip.style.left = `${x}px`;
+      tooltip.style.top = `${y}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.classList.add('hidden');
+    }
+
+    function updateGlobalStats() {
+      const totalEpisodes = SIMPSONS_DATA.length; // 269
+      const ratedKeys = Object.keys(userRatings);
+      const count = ratedKeys.length;
+
+      document.getElementById('stat-rated-count').textContent = `${count} / ${totalEpisodes}`;
+
+      if (count === 0) {
+        document.getElementById('stat-avg-quality').textContent = '-';
+        document.getElementById('stat-avg-hilarity').textContent = '-';
+        return;
+      }
+
+      let qSum = 0;
+      let hSum = 0;
+      ratedKeys.forEach(k => {
+        qSum += userRatings[k].quality;
+        hSum += userRatings[k].hilarity;
+      });
+
+      document.getElementById('stat-avg-quality').textContent = (qSum / count).toFixed(1);
+      document.getElementById('stat-avg-hilarity').textContent = (hSum / count).toFixed(1);
+    }
+
+    function showToast(msg, icon = '🍩') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast-icon').textContent = icon;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2400);
+    }
+
+    function exportCSV() {
+      let csvContent = "Season,Episode,Title,Quality,Hilarity\n";
+
+      SIMPSONS_DATA.forEach(ep => {
+        const key = `${ep.s}_${ep.e}`;
+        const rating = userRatings[key];
+        const q = rating ? rating.quality : "";
+        const h = rating ? rating.hilarity : "";
+        const cleanTitle = `"${ep.title.replace(/"/g, '""')}"`;
+        csvContent += `${ep.s},${ep.e},${cleanTitle},${q},${h}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `simpsons_ratings_seasons_1_to_12.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSV exported successfully!");
+    }
+
+    function importCSV(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const text = evt.target.result;
+          const lines = text.split(/\r\n|\n/);
+          let importedCount = 0;
+
+          lines.forEach((line, idx) => {
+            if (idx === 0 || !line.trim()) return; // Skip header
+
+            // Parse quoted CSV fields accurately
+            const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
+            if (parts.length >= 5) {
+              const s = parseInt(parts[0].replace(/"/g, ''), 10);
+              const ep = parseInt(parts[1].replace(/"/g, ''), 10);
+              const qStr = parts[3].replace(/"/g, '').trim();
+              const hStr = parts[4].replace(/"/g, '').trim();
+
+              if (!isNaN(s) && !isNaN(ep) && qStr !== "" && hStr !== "") {
+                const q = Math.round(parseInt(qStr, 10));
+                const h = Math.round(parseInt(hStr, 10));
+                if (!isNaN(q) && !isNaN(h) && q >= 1 && q <= 10 && h >= 1 && h <= 10) {
+                  userRatings[`${s}_${ep}`] = { quality: q, hilarity: h };
+                  importedCount++;
+                }
+              }
+            }
+          });
+
+          saveRatingsToStorage();
+          updateEpisodeDropdown();
+          renderCurrentEpisodeCard();
+          updateGlobalStats();
+          buildGridTable();
+          showToast(`Imported ${importedCount} ratings!`, '✅');
+        } catch (err) {
+          console.error("CSV import error:", err);
+          showToast("Failed to parse CSV file.", '❌');
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function promptClearAllRatings() {
+      openModal(
+        '🗑 Reset All Ratings?',
+        'Are you sure you want to delete all saved episode ratings? You can export your CSV first if you wish to keep a backup.',
+        'Reset Ratings',
+        () => {
+          userRatings = {};
+          saveRatingsToStorage();
+          updateEpisodeDropdown();
+          renderCurrentEpisodeCard();
+          updateGlobalStats();
+          buildGridTable();
+          showToast('All episode ratings have been reset.', '🗑');
+        }
+      );
+    }
+
+    function openModal(title, desc, confirmText, onConfirm) {
+      const modal = document.getElementById('custom-modal');
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-desc').textContent = desc;
+      const confirmBtn = document.getElementById('modal-btn-confirm');
+      confirmBtn.textContent = confirmText;
+
+      confirmBtn.onclick = () => {
+        modal.classList.add('hidden');
+        onConfirm();
+      };
+      document.getElementById('modal-btn-cancel').onclick = () => {
+        modal.classList.add('hidden');
+      };
+      modal.classList.remove('hidden');
+    }
+
+    function switchTab(tab) {
+      const entryView = document.getElementById('view-entry');
+      const chartView = document.getElementById('view-chart');
+      const entryBtn = document.getElementById('tab-btn-entry');
+      const chartBtn = document.getElementById('tab-btn-chart');
+
+      if (tab === 'entry') {
+        entryView.classList.remove('hidden');
+        chartView.classList.add('hidden');
+        entryBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-bold text-sm sm:text-base border-2 border-b-0 border-black transition-all bg-white text-black shadow-md -mb-[2px] relative z-10';
+        chartBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-bold text-sm sm:text-base border-2 border-b-0 border-black/40 transition-all bg-amber-200/70 hover:bg-white/70 text-gray-700 -mb-[2px]';
+        renderCurrentEpisodeCard();
+      } else {
+        entryView.classList.add('hidden');
+        chartView.classList.remove('hidden');
+        chartBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-bold text-sm sm:text-base border-2 border-b-0 border-black transition-all bg-white text-black shadow-md -mb-[2px] relative z-10';
+        entryBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-bold text-sm sm:text-base border-2 border-b-0 border-black/40 transition-all bg-amber-200/70 hover:bg-white/70 text-gray-700 -mb-[2px]';
+        buildGridTable();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadRatingsFromStorage();
+      initSeasonDropdown();
+      updateEpisodeDropdown();
+      updateGlobalStats();
+      buildGridTable();
+    });
+  </script>
+</body>
+</html>
